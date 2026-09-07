@@ -56,12 +56,13 @@ def instagram_webhook(
         message = get_message(entry)
         logger.info("Received message: %s", message)
 
-        sender_id = get_sender_id(entry)
-        logger.info("Sender ID: %s", sender_id)
+        if message:
+            sender_id = get_sender_id(entry)
+            logger.info("Sender ID: %s", sender_id)
 
-        reply = generate_reply(message)
-        logger.info("Generated reply: %s", reply)
-        
-        respond(sender_id, reply)
+            reply = generate_reply(sender_id, message)
+            logger.info("Generated reply: %s", reply)
+            
+            respond(sender_id, reply)
 
     return {"status": "ok"}
