@@ -28,6 +28,10 @@ from ai.agent import generate_reply
 
 app = FastAPI()
 
+default_response = {
+    "status": "ok"
+}
+
 @app.get('/')
 def root():
     return "Hello from Instagram Automation server."
@@ -52,17 +56,21 @@ def instagram_webhook(
 ):
     entry = payload.entry[0]
     
-    if not is_echo(entry):
-        message = get_message(entry)
-        logger.info("Received message: %s", message)
+    if is_echo(entry):
+        return default_response
+    
+    message = get_message(entry)
+    logger.info("Received message: %s", message)
 
-        if message:
-            sender_id = get_sender_id(entry)
-            logger.info("Sender ID: %s", sender_id)
+    if not message:
+        return default_response
+    
+    sender_id = get_sender_id(entry)
+    logger.info("Sender ID: %s", sender_id)
 
-            reply = generate_reply(sender_id, message)
-            logger.info("Generated reply: %s", reply)
+    reply = generate_reply(sender_id, message)
+    logger.info("Generated reply: %s", reply)
             
-            respond(sender_id, reply)
+    respond(sender_id, reply)
 
-    return {"status": "ok"}
+    return default_response
