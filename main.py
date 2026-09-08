@@ -71,23 +71,22 @@ def instagram_webhook(
         logger.info("Ignoring echoed message: %s", message)
         return default_response
     
-    message_time = get_message_time(entry) / 1000
-    current_time = datetime.now().timestamp()
-    time_difference = current_time - message_time
-    
-    logger.info("Message time: %s, Current time: %s, Time difference: %s seconds", message_time, current_time, time_difference)
-    
-    if not (current_time - message_time <= 10):
-        logger.info("Ignoring old message: %s", message)
-        return default_response
-    
     sender_id = get_sender_id(entry)
     logger.info("Sender ID: %s", sender_id)
     
     if sender_id == os.getenv('MY_IG_ID'):
         logger.info("Ignoring message from self even after not echoed: %s", message)
         return default_response
-
+    
+    message_time = get_message_time(entry) / 1000
+    current_time = datetime.now().timestamp()
+    time_difference = current_time - message_time
+    
+    logger.info("Message time: %s, Current time: %s, Time difference: %s seconds", message_time, current_time, time_difference)
+    if not (current_time - message_time <= 10):
+        logger.info("Ignoring old message: %s and asking again", message)
+        return default_response
+    
     if message == "🔛":
         if sender_id in subscribers:
             respond(sender_id, MESSAGE["ALREADY_ACTIVE"])
