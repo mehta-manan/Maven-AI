@@ -65,6 +65,7 @@ def instagram_webhook(
     logger.info("Received message: %s", message)
     
     if not message:
+        logger.info("No message found in entry: %s", entry)
         return default_response
     
     if is_echo(entry):
