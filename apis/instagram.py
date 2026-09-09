@@ -1,11 +1,12 @@
 import json
 import os
-from utils import http_client
+from abc import ABC
 
 import logging
 logger = logging.getLogger(__name__)
 
-from abc import ABC, abstractmethod
+from utils import http_client
+
 class InstagramAccount(ABC):
     def __init__(self, id, auth_token) -> None:
         self.id = id

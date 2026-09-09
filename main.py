@@ -26,12 +26,27 @@ from fastapi.responses import PlainTextResponse
 from schemas.webhook import InstagramWebhookRequestPayload
 from utils.message import is_echo, get_sender_id, get_recipient_id, get_message, get_message_time
 from ai.agent import generate_reply
-from apis.instagram import maven_ai_ig, personal_ig
+from apis.instagram import maven_ai_ig, personal_ig, InstagramAccounts
 from constants.messages import MESSAGE
 
 app = FastAPI()
 
 subscribers = set()
+
+def get_account_name(account_id):
+    match account_id:
+        case maven_ai_ig.id:
+            return InstagramAccounts.MAVEN_AI.value
+        case personal_ig.id:
+            return InstagramAccounts.PERSONAL.value
+        case _:
+            return "Unknown"
+
+def is_old_message(entry: dict) -> bool:
+    message_time = get_message_time(entry) / 1000
+    current_time = datetime.now().timestamp()
+    time_difference = current_time - message_time
+    return time_difference > 10
 
 default_response = {
     "status": "ok"
@@ -61,6 +76,10 @@ def instagram_webhook(
 ):
     entry = payload.entry[0]
     
+    # webhook receiver account id
+    account_id = entry.get("id")
+    account_name = get_account_name(account_id)
+    
     message = get_message(entry)
     logger.info("Received message: %s", message)
     
@@ -68,20 +87,76 @@ def instagram_webhook(
         logger.info("No message found in entry: %s", entry)
         return default_response
     
-    if is_echo(entry):
-        logger.info("Ignoring echoed message: %s", message)
-        return default_response
-    
     sender_id = get_sender_id(entry)
     recipient_id = get_recipient_id(entry)
     
-    logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, recipient_id)
-     
-    if sender_id == maven_ai_ig.id:
-        logger.info("Ignoring message from self even after not echoed: %s", message)
+    # when echoed, the webhook receiver id will be same as the sender id
+    if is_echo(entry):
+        logger.info("ECHOED: Ignoring echoed message on %s: %s", account_name, message)
+        # explicit condition on (sender id, account name), just for extra confidence
+        logger.info("Sender ID: %s -> Recipient ID: %s", account_name if sender_id == account_id else sender_id, recipient_id)
         return default_response
+    
+    # NOTE: for different accounts, different sender id's exist.
+    # so instead of checking on sender_id directly, we check on reciever_id
+    # for any reciever, its id will be constant, as it is its own context
+    
+    # when the webhook receiver id is of MavenAI account, in my context I can be sure of receiver, which will be MavenAI
+    if account_id == maven_ai_ig.id:
+        logger.info("Message received for MavenAI Instagram account.")
+        # explicit condition on (recipient_id, account name), just for extra confidence
+        logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, account_name if recipient_id == account_id else recipient_id)
+        # maven_ai_ig.send_message(sender_id, "HELLO!")
+        if not is_old_message(entry):
+            reply = generate_reply(sender_id, message)
+            logger.info("Generated reply: %s", reply) 
+            maven_ai_ig.send_message(sender_id, reply)
+            
+    # when the webhook receiver id is of Personal account, in my context I can be sure of receiver, which will be Personal
+    elif account_id == personal_ig.id:
+        logger.info("Message received for Personal Instagram account.")
+        logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, account_name if recipient_id == account_id else recipient_id)
+        # personal_ig.send_message(sender_id, "HI!")
+    
+    # logger.info(
+    # "entry_id=%s sender=%s recipient=%s is_echo=%s",
+    # entry.get("id"),
+    # sender_id,
+    # recipient_id,
+    # is_echo(entry),
+    # )
+    
+    
+    
+    
+    
+    
+    # logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, recipient_id)
+     
+    # if sender_id == maven_ai_ig.id:
+    #     if recipient_id == personal_ig.id:
+    #         maven_ai_ig.send_message(sender_id, "HELLO!")
+    #     else:
+    #         logger.info("Ignoring message from self even after not echoed: %s", message)
+    #     return default_response
+    
+    # if sender_id == personal_ig.id:
+    #     if recipient_id == maven_ai_ig.id:
+    #         personal_ig.send_message(sender_id, "HELLO")
+    #     else:
+    #         logger.info("Ignoring message from self even after not echoed: %s", message)
+    #     return default_response
+    
+    
+    # if sender_id == maven_ai_ig.id:
+    #     logger.info("Ignoring message from self even after not echoed: %s", message)
         
-    maven_ai_ig.send_message(sender_id, "HELLO!")  
+    # if recipient_id == maven_ai_ig.id:
+    #     maven_ai_ig.send_message(sender_id, "HELLO!") 
+        
+        
+    # elif recipient_id == personal_ig:
+    #     personal_ig.send_message(sender_id, "HELLO")
         
     # if sender_id == os.getenv('MY_IG_ID'):
     #     logger.info("Ignoring message from self even after not echoed: %s", message)
