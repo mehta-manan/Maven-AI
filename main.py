@@ -24,9 +24,9 @@ from fastapi import FastAPI, status, Query
 from fastapi.responses import PlainTextResponse
 
 from schemas.webhook import InstagramWebhookRequestPayload
-from utils.message import is_echo, get_sender_id, get_message, get_message_time
+from utils.message import is_echo, get_sender_id, get_recipient_id, get_message, get_message_time
 from ai.agent import generate_reply
-from apis.instagram import respond
+from apis.instagram import maven_ai_ig, personal_ig
 from constants.messages import MESSAGE
 
 app = FastAPI()
@@ -73,39 +73,46 @@ def instagram_webhook(
         return default_response
     
     sender_id = get_sender_id(entry)
-    logger.info("Sender ID: %s", sender_id)
+    recipient_id = get_recipient_id(entry)
     
-    if sender_id == os.getenv('MY_IG_ID'):
+    logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, recipient_id)
+     
+    if sender_id == maven_ai_ig.id:
         logger.info("Ignoring message from self even after not echoed: %s", message)
         return default_response
+        
+    maven_ai_ig.send_message(sender_id, "HELLO!")  
+        
+    # if sender_id == os.getenv('MY_IG_ID'):
+    #     logger.info("Ignoring message from self even after not echoed: %s", message)
+    #     return default_response
+    # message_time = get_message_time(entry) / 1000
+    # current_time = datetime.now().timestamp()
+    # time_difference = current_time - message_time
     
-    message_time = get_message_time(entry) / 1000
-    current_time = datetime.now().timestamp()
-    time_difference = current_time - message_time
+    # logger.info("Message time: %s, Current time: %s, Time difference: %s seconds", message_time, current_time, time_difference)
+    # if not (current_time - message_time <= 10):
+    #     logger.info("Ignoring old message: %s and asking again", message)
+    #     return default_response
     
-    logger.info("Message time: %s, Current time: %s, Time difference: %s seconds", message_time, current_time, time_difference)
-    if not (current_time - message_time <= 10):
-        logger.info("Ignoring old message: %s and asking again", message)
-        return default_response
+    # if message == "🔛":
+    #     if sender_id in subscribers:
+    #         respond(sender_id, MESSAGE["ALREADY_ACTIVE"])
+    #     else:
+    #         subscribers.add(sender_id)
+    #         respond(sender_id, MESSAGE["GREET_HELLO"])
+    #     return default_response
+    # elif message == "📴":
+    #     if sender_id in subscribers:
+    #         subscribers.remove(sender_id)
+    #         respond(sender_id, MESSAGE["GREET_BYE"])
+    #     return default_response
     
-    if message == "🔛":
-        if sender_id in subscribers:
-            respond(sender_id, MESSAGE["ALREADY_ACTIVE"])
-        else:
-            subscribers.add(sender_id)
-            respond(sender_id, MESSAGE["GREET_HELLO"])
-        return default_response
-    elif message == "📴":
-        if sender_id in subscribers:
-            subscribers.remove(sender_id)
-            respond(sender_id, MESSAGE["GREET_BYE"])
-        return default_response
-    
-    if sender_id in subscribers:  
-        reply = generate_reply(sender_id, message)
-        logger.info("Generated reply: %s", reply) 
-        respond(sender_id, reply)
-    else:
-        logger.info("Ignoring message from non-subscriber: %s : %s", sender_id, message)
+    # if sender_id in subscribers:  
+    #     reply = generate_reply(sender_id, message)
+    #     logger.info("Generated reply: %s", reply) 
+    #     respond(sender_id, reply)
+    # else:
+    #     logger.info("Ignoring message from non-subscriber: %s : %s", sender_id, message)
 
     return default_response

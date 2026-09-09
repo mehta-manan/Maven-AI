@@ -14,4 +14,7 @@ def get_message_time(entry: dict) -> int:
 
 def get_sender_id(entry: dict) -> str:
     return entry["messaging"][0]["sender"]["id"]
+
+def get_recipient_id(entry: dict) -> str:
+    return entry["messaging"][0]["recipient"]["id"]
         
