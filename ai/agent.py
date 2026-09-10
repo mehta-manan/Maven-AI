@@ -8,7 +8,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import trim_messages
 from langchain.agents.middleware import before_model
 
-from ai.prompt import sytem_prompt
+from ai.prompt import system_prompt
 
 llm = ChatOpenAI(model=str(os.getenv('LLM')))
 
@@ -31,7 +31,7 @@ checkpointer = InMemorySaver()
 
 agent = create_agent(
     model=llm,
-    system_prompt=sytem_prompt,
+    system_prompt=system_prompt,
     checkpointer=checkpointer,
     middleware=[trim_context]
 )
