@@ -1,6 +1,6 @@
 import os
 
-from instagram_account import InstagramAccount
+from instagram.instagram_account import InstagramAccount
 
 class PersonalInstagramAccount(InstagramAccount):
     def __init__(self) -> None:

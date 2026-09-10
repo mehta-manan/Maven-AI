@@ -1,10 +1,10 @@
 from abc import ABC
 
-from instagram_accounts import InstagramAccounts
-from instagram_account import InstagramAccount
+from instagram.instagram_accounts import InstagramAccounts
+from instagram.instagram_account import InstagramAccount
 
-from accounts.mavenai_account import MavenAIInstagramAccount
-from accounts.personal_account import PersonalInstagramAccount
+from instagram.accounts.mavenai_account import MavenAIInstagramAccount
+from instagram.accounts.personal_account import PersonalInstagramAccount
 
 class InstagramAccountFactory(ABC):
     @staticmethod
