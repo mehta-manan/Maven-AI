@@ -26,10 +26,16 @@ from fastapi.responses import PlainTextResponse
 from schemas.webhook import InstagramWebhookRequestPayload
 from utils.message import is_echo, get_sender_id, get_recipient_id, get_message, get_message_time
 from ai.agent import generate_reply
-from apis.instagram import maven_ai_ig, personal_ig, InstagramAccounts
+
+from instagram.instagram_account_factory import InstagramAccountFactory
+from instagram.instagram_accounts import InstagramAccounts
+
 from constants.messages import MESSAGE
 
 app = FastAPI()
+
+maven_ai_ig = InstagramAccountFactory.create(InstagramAccounts.MAVEN_AI)
+personal_ig = InstagramAccountFactory.create(InstagramAccounts.PERSONAL)
 
 subscribers = set()
 
@@ -47,6 +53,9 @@ def is_old_message(entry: dict) -> bool:
     current_time = datetime.now().timestamp()
     time_difference = current_time - message_time
     return time_difference > 10
+
+def get_reciever_name(user_id: str, account_id: str) -> str:
+    return get_account_name(account_id) if user_id == account_id else user_id
 
 default_response = {
     "status": "ok"
@@ -77,7 +86,7 @@ def instagram_webhook(
     entry = payload.entry[0]
     
     # webhook receiver account id
-    account_id = entry.get("id")
+    account_id = str(entry.get("id"))
     account_name = get_account_name(account_id)
     
     message = get_message(entry)
@@ -94,7 +103,7 @@ def instagram_webhook(
     if is_echo(entry):
         logger.info("ECHOED: Ignoring echoed message on %s: %s", account_name, message)
         # explicit condition on (sender id, account name), just for extra confidence
-        logger.info("Sender ID: %s -> Recipient ID: %s", account_name if sender_id == account_id else sender_id, recipient_id)
+        logger.info("Sender ID: %s -> Recipient ID: %s", get_reciever_name(sender_id, account_id), recipient_id)
         return default_response
     
     # NOTE: for different accounts, different sender id's exist.
@@ -105,7 +114,7 @@ def instagram_webhook(
     if account_id == maven_ai_ig.id:
         logger.info("Message received for MavenAI Instagram account.")
         # explicit condition on (recipient_id, account name), just for extra confidence
-        logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, account_name if recipient_id == account_id else recipient_id)
+        logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, get_reciever_name(sender_id, recipient_id))
         # maven_ai_ig.send_message(sender_id, "HELLO!")
         if not is_old_message(entry):
             reply = generate_reply(sender_id, message)
@@ -115,7 +124,7 @@ def instagram_webhook(
     # when the webhook receiver id is of Personal account, in my context I can be sure of receiver, which will be Personal
     elif account_id == personal_ig.id:
         logger.info("Message received for Personal Instagram account.")
-        logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, account_name if recipient_id == account_id else recipient_id)
+        logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, get_reciever_name(sender_id, recipient_id))
         # personal_ig.send_message(sender_id, "HI!")
     
     # logger.info(
