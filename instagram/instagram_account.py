@@ -8,11 +8,12 @@ logger = logging.getLogger(__name__)
 from utils import http_client
 
 class InstagramAccount(ABC):
-    def __init__(self, id, auth_token) -> None:
+    def __init__(self, id, auth_token, name) -> None:
         self.id = id
         self._auth_token = auth_token
         self._instagram_message_url = os.getenv('INSTAGRAM_MESSAGES_URL')
-        
+        self.name = name
+
     def send_message(self, recipient_id: str, message: str):
         data = {
                 "recipient": {

@@ -42,9 +42,9 @@ subscribers = set()
 def get_account_name(account_id):
     match account_id:
         case maven_ai_ig.id:
-            return InstagramAccounts.MAVEN_AI.value
+            return maven_ai_ig.name
         case personal_ig.id:
-            return InstagramAccounts.PERSONAL.value
+            return personal_ig.name
         case _:
             return "Unknown"
      
@@ -96,9 +96,9 @@ def instagram_webhook(
     # so instead of checking on sender_id directly, we check on reciever_id
     # for any reciever, its id will be constant, as it is its own context
     
+    logger.info(f"Message received for {account_name} Instagram account.")
     # when the webhook receiver id is of MavenAI account, in my context I can be sure of receiver, which will be MavenAI
     if account_id == maven_ai_ig.id:
-        logger.info("Message received for MavenAI Instagram account.")
         # explicit condition on (recipient_id, account name), just for extra confidence
         logger.info("Sender ID: %s -> Recipient ID: %s", message.sender_id, get_reciever_name(message.recipient_id, account_id))
         # maven_ai_ig.send_message(sender_id, "HELLO!")
@@ -106,83 +106,13 @@ def instagram_webhook(
             reply = generate_reply(message.sender_id, message)
             logger.info("Generated reply: %s", reply) 
             maven_ai_ig.send_message(message.sender_id, reply)
+    
+    # NOTE: disabling personal account for now, as it is not needed in my context. If needed, can be enabled later.
             
     # when the webhook receiver id is of Personal account, in my context I can be sure of receiver, which will be Personal
-    elif account_id == personal_ig.id:
-        logger.info("Message received for Personal Instagram account.")
-        logger.info("Sender ID: %s -> Recipient ID: %s", message.sender_id, get_reciever_name(message.recipient_id, account_id))
-        # personal_ig.send_message(sender_id, "HI!")
+    # elif account_id == personal_ig.id:
+    #     logger.info("Message received for Personal Instagram account.")
+    #     logger.info("Sender ID: %s -> Recipient ID: %s", message.sender_id, get_reciever_name(message.recipient_id, account_id))
+    #     personal_ig.send_message(sender_id, "HI!")
     
-    # logger.info(
-    # "entry_id=%s sender=%s recipient=%s is_echo=%s",
-    # entry.get("id"),
-    # sender_id,
-    # recipient_id,
-    # is_echo(entry),
-    # )
-    
-    
-    
-    
-    
-    
-    # logger.info("Sender ID: %s -> Recipient ID: %s", sender_id, recipient_id)
-     
-    # if sender_id == maven_ai_ig.id:
-    #     if recipient_id == personal_ig.id:
-    #         maven_ai_ig.send_message(sender_id, "HELLO!")
-    #     else:
-    #         logger.info("Ignoring message from self even after not echoed: %s", message)
-    #     return default_response
-    
-    # if sender_id == personal_ig.id:
-    #     if recipient_id == maven_ai_ig.id:
-    #         personal_ig.send_message(sender_id, "HELLO")
-    #     else:
-    #         logger.info("Ignoring message from self even after not echoed: %s", message)
-    #     return default_response
-    
-    
-    # if sender_id == maven_ai_ig.id:
-    #     logger.info("Ignoring message from self even after not echoed: %s", message)
-        
-    # if recipient_id == maven_ai_ig.id:
-    #     maven_ai_ig.send_message(sender_id, "HELLO!") 
-        
-        
-    # elif recipient_id == personal_ig:
-    #     personal_ig.send_message(sender_id, "HELLO")
-        
-    # if sender_id == os.getenv('MY_IG_ID'):
-    #     logger.info("Ignoring message from self even after not echoed: %s", message)
-    #     return default_response
-    # message_time = get_message_time(entry) / 1000
-    # current_time = datetime.now().timestamp()
-    # time_difference = current_time - message_time
-    
-    # logger.info("Message time: %s, Current time: %s, Time difference: %s seconds", message_time, current_time, time_difference)
-    # if not (current_time - message_time <= 10):
-    #     logger.info("Ignoring old message: %s and asking again", message)
-    #     return default_response
-    
-    # if message == "🔛":
-    #     if sender_id in subscribers:
-    #         respond(sender_id, MESSAGE["ALREADY_ACTIVE"])
-    #     else:
-    #         subscribers.add(sender_id)
-    #         respond(sender_id, MESSAGE["GREET_HELLO"])
-    #     return default_response
-    # elif message == "📴":
-    #     if sender_id in subscribers:
-    #         subscribers.remove(sender_id)
-    #         respond(sender_id, MESSAGE["GREET_BYE"])
-    #     return default_response
-    
-    # if sender_id in subscribers:  
-    #     reply = generate_reply(sender_id, message)
-    #     logger.info("Generated reply: %s", reply) 
-    #     respond(sender_id, reply)
-    # else:
-    #     logger.info("Ignoring message from non-subscriber: %s : %s", sender_id, message)
-
     return default_response
