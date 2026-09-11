@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from message.message_type import MessageType
+from instagram.message.message_type import MessageType
 
 import logging
 logger = logging.getLogger(__name__)

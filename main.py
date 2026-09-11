@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
+load_dotenv()
 
 from instagram.message.message_factory import MessageFactory
-load_dotenv()
+from instagram.message.message_type import MessageType
 
 import logging
 
@@ -31,13 +32,19 @@ from instagram.instagram_account_factory import InstagramAccountFactory
 from instagram.instagram_accounts import InstagramAccounts
 
 from instagram.message.message_factory import MessageFactory
+from instagram.message.message import Message
+from instagram.message.messages.text_message import TextMessage
+from instagram.message.messages.attachment_message import AttachmentMessage
+
+from utils.http_client import fetch
 
 app = FastAPI()
 
 maven_ai_ig = InstagramAccountFactory.create(InstagramAccounts.MAVEN_AI)
 personal_ig = InstagramAccountFactory.create(InstagramAccounts.PERSONAL)
 
-subscribers = set()
+def download_image(url: str):
+    return fetch(url)
 
 def get_account_name(account_id):
     match account_id:
@@ -77,13 +84,15 @@ def verify_webhook(
 def instagram_webhook(
     payload: InstagramWebhookRequestPayload
 ):
+    print(payload.entry[0])
+    # return default_response
     entry = payload.entry[0]
     
     # webhook receiver account id
     account_id = str(entry.get("id"))
     account_name = get_account_name(account_id)
     
-    message = MessageFactory.create(entry)
+    message: Message = MessageFactory.create(entry)
 
     # when echoed, the webhook receiver id will be same as the sender id
     if message.is_echo:
@@ -103,9 +112,21 @@ def instagram_webhook(
         logger.info("Sender ID: %s -> Recipient ID: %s", message.sender_id, get_reciever_name(message.recipient_id, account_id))
         # maven_ai_ig.send_message(sender_id, "HELLO!")
         if not message.is_old_message():
-            reply = generate_reply(message.sender_id, message)
-            logger.info("Generated reply: %s", reply) 
-            maven_ai_ig.send_message(message.sender_id, reply)
+            if isinstance(message, TextMessage):
+                reply = generate_reply(message.sender_id, message.text)
+                logger.info("Generated reply: %s", reply) 
+                maven_ai_ig.send_message(message.sender_id, reply)
+            elif isinstance(message, AttachmentMessage):
+                for attachment in message.attachments:
+                    if attachment["type"] == 'image':
+                        image = download_image(attachment["payload"]["url"])
+                        # reply = analyze_image(image)
+                        # logger.info("Generated reply after analyzing image: %s", reply)
+                        # maven_ai_ig.send_message(message.sender_id, reply)
+
+                    
+                
+            
     
     # NOTE: disabling personal account for now, as it is not needed in my context. If needed, can be enabled later.
             

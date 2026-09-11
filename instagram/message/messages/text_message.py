@@ -1,3 +1,5 @@
+from typing import Any
+
 from instagram.message.message import Message
 from instagram.message.message_type import MessageType
 
