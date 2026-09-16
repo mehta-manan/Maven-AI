@@ -39,10 +39,7 @@ agent = create_agent(
 def generate_reply(sender_id, content):
     result = agent.invoke(
         {
-            "messages": [{
-                "role": "user",
-                "content": content
-            }]
+            "messages": [content]
         },
         config={
             "configurable": {
