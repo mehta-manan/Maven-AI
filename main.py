@@ -27,14 +27,16 @@ from fastapi.responses import PlainTextResponse
 
 from schemas.webhook import InstagramWebhookRequestPayload
 from ai.agent import generate_reply
+from ai.content import get_content
 
 from instagram.instagram_account_factory import InstagramAccountFactory
 from instagram.instagram_accounts import InstagramAccounts
 
 from instagram.message.message_factory import MessageFactory
 from instagram.message.message import Message
-from instagram.message.messages.text_message import TextMessage
-from instagram.message.messages.attachment_message import AttachmentMessage
+from instagram.message.messages.text import TextMessage
+from instagram.message.messages.attachment import AttachmentMessage
+from instagram.message.messages.attachment_type import AttachmentType
 
 from utils.http_client import fetch
 
@@ -42,9 +44,6 @@ app = FastAPI()
 
 maven_ai_ig = InstagramAccountFactory.create(InstagramAccounts.MAVEN_AI)
 personal_ig = InstagramAccountFactory.create(InstagramAccounts.PERSONAL)
-
-def download_image(url: str):
-    return fetch(url)
 
 def get_account_name(account_id):
     match account_id:
@@ -111,18 +110,25 @@ def instagram_webhook(
         # explicit condition on (recipient_id, account name), just for extra confidence
         logger.info("Sender ID: %s -> Recipient ID: %s", message.sender_id, get_reciever_name(message.recipient_id, account_id))
         # maven_ai_ig.send_message(sender_id, "HELLO!")
-        if not message.is_old_message():
+        if message.is_old_message():
+            logger.info("Ignoring old message on %s: %s", account_name, message)
+        else:
             if isinstance(message, TextMessage):
-                reply = generate_reply(message.sender_id, message.text)
+                content = get_content(message.text, TextMessage)
+                reply = generate_reply(message.sender_id, content)
                 logger.info("Generated reply: %s", reply) 
                 maven_ai_ig.send_message(message.sender_id, reply)
             elif isinstance(message, AttachmentMessage):
                 for attachment in message.attachments:
-                    if attachment["type"] == 'image':
-                        image = download_image(attachment["payload"]["url"])
-                        # reply = analyze_image(image)
-                        # logger.info("Generated reply after analyzing image: %s", reply)
-                        # maven_ai_ig.send_message(message.sender_id, reply)
+                    if attachment["type"] == AttachmentType.IMAGE.value:
+                        content = get_content(attachment["payload"]["url"], AttachmentType.IMAGE)
+                        reply = generate_reply(message.sender_id, content)
+                        logger.info("Generated reply after analyzing image: %s", reply)
+                        maven_ai_ig.send_message(message.sender_id, reply)
+                    else:
+                        logger.warning("Unsupported attachment type received on %s: %s", account_name, attachment["type"])
+            else:
+                logger.warning("Unsupported message type received on %s: %s", account_name, message)
 
                     
                 

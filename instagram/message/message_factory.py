@@ -2,8 +2,8 @@ from abc import ABC
 
 from instagram.message.message import Message
 from instagram.message.message_type import MessageType
-from instagram.message.messages.text_message import TextMessage
-from instagram.message.messages.attachment_message import AttachmentMessage
+from instagram.message.messages.text import TextMessage
+from instagram.message.messages.attachment import AttachmentMessage
 
 class MessageFactory(ABC):
     @staticmethod

@@ -36,12 +36,12 @@ agent = create_agent(
     middleware=[trim_context]
 )
 
-def generate_reply(sender_id, message):
+def generate_reply(sender_id, content):
     result = agent.invoke(
         {
             "messages": [{
                 "role": "user",
-                "content": message
+                "content": content
             }]
         },
         config={
