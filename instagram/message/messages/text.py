@@ -7,3 +7,9 @@ class TextMessage(Message):
     def __init__(self, entry) -> None:
         super().__init__(entry)
         self.text = self._message[MessageType.TEXT.value]
+    
+    def get_agent_message(self):
+        return {
+            "role": "user",
+            "content": self.text
+        }

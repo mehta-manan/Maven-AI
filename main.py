@@ -27,7 +27,6 @@ from fastapi.responses import PlainTextResponse
 
 from schemas.webhook import InstagramWebhookRequestPayload
 from ai.agent import generate_reply
-from ai.content import get_content
 
 from instagram.instagram_account_factory import InstagramAccountFactory
 from instagram.instagram_accounts import InstagramAccounts
@@ -37,8 +36,6 @@ from instagram.message.message import Message
 from instagram.message.messages.text import TextMessage
 from instagram.message.messages.attachment import AttachmentMessage
 from instagram.message.messages.attachment_type import AttachmentType
-
-from utils.http_client import fetch
 
 app = FastAPI()
 
@@ -114,14 +111,14 @@ def instagram_webhook(
             logger.info("Ignoring old message on %s: %s", account_name, message)
         else:
             if isinstance(message, TextMessage):
-                content = get_content(message.text, TextMessage)
+                content = message.get_agent_message()
                 reply = generate_reply(message.sender_id, content)
                 logger.info("Generated reply: %s", reply) 
                 maven_ai_ig.send_message(message.sender_id, reply)
             elif isinstance(message, AttachmentMessage):
                 for attachment in message.attachments:
                     if attachment["type"] == AttachmentType.IMAGE.value:
-                        content = get_content(attachment["payload"]["url"], AttachmentType.IMAGE)
+                        content = message.get_agent_message(message.attachments.index(attachment))
                         reply = generate_reply(message.sender_id, content)
                         logger.info("Generated reply after analyzing image: %s", reply)
                         maven_ai_ig.send_message(message.sender_id, reply)

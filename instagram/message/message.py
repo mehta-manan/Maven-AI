@@ -47,4 +47,7 @@ class Message():
         elif self._message[MessageType.ATTACHMENTS.value]:
             return MessageType.ATTACHMENTS
         else:
-            return None, None        
+            return None, None       
+    
+    def get_agent_message(self):
+        raise NotImplementedError("Subclasses must implement this method.") 
