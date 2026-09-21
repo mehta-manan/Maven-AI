@@ -5,7 +5,7 @@ load_dotenv()
 
 import os
 
-personal_ig_id = str(os.getenv('PERSONAL_INSTAGRAM_ID'))
+personal_ig_id = str(os.getenv('PERSONAL_ACCOUNT_PUBLIC_IG_ID'))
 
 current_time = datetime.now(
     ZoneInfo("Asia/Kolkata")

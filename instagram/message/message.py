@@ -42,9 +42,9 @@ class Message():
         return time_difference > 120
     
     def classify_message(self):
-        if self._message[MessageType.TEXT.value]:
+        if self._message.get(MessageType.TEXT.value):
             return MessageType.TEXT
-        elif self._message[MessageType.ATTACHMENTS.value]:
+        elif self._message.get(MessageType.ATTACHMENTS.value):
             return MessageType.ATTACHMENTS
         else:
             return None, None       

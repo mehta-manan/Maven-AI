@@ -5,6 +5,6 @@ from instagram.instagram_accounts import InstagramAccounts
 
 class PersonalInstagramAccount(InstagramAccount):
     def __init__(self) -> None:
-        id = str(os.getenv('MY_IG_ID'))
+        id = str(os.getenv('PERSONAL_ACCOUNT_RECEIVER_ID'))
         auth_token = str(os.getenv('PERSONAL_AUTH_TOKEN'))
         super().__init__(id, auth_token, InstagramAccounts.PERSONAL.value)

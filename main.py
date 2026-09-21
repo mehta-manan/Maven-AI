@@ -1,3 +1,4 @@
+import base64
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -81,6 +82,7 @@ def instagram_webhook(
     payload: InstagramWebhookRequestPayload
 ):
     print(payload.entry[0])
+    
     # return default_response
     entry = payload.entry[0]
     
@@ -106,7 +108,7 @@ def instagram_webhook(
     if account_id == maven_ai_ig.id:
         # explicit condition on (recipient_id, account name), just for extra confidence
         logger.info("Sender ID: %s -> Recipient ID: %s", message.sender_id, get_reciever_name(message.recipient_id, account_id))
-        # maven_ai_ig.send_message(sender_id, "HELLO!")
+
         if message.is_old_message():
             logger.info("Ignoring old message on %s: %s", account_name, message)
         else:
@@ -116,9 +118,9 @@ def instagram_webhook(
                 logger.info("Generated reply: %s", reply) 
                 maven_ai_ig.send_message(message.sender_id, reply)
             elif isinstance(message, AttachmentMessage):
-                for attachment in message.attachments:
+                for index, attachment in enumerate(message.attachments):
                     if attachment["type"] == AttachmentType.IMAGE.value:
-                        content = message.get_agent_message(message.attachments.index(attachment))
+                        content = message.get_agent_message(index)
                         reply = generate_reply(message.sender_id, content)
                         logger.info("Generated reply after analyzing image: %s", reply)
                         maven_ai_ig.send_message(message.sender_id, reply)
@@ -127,10 +129,6 @@ def instagram_webhook(
             else:
                 logger.warning("Unsupported message type received on %s: %s", account_name, message)
 
-                    
-                
-            
-    
     # NOTE: disabling personal account for now, as it is not needed in my context. If needed, can be enabled later.
             
     # when the webhook receiver id is of Personal account, in my context I can be sure of receiver, which will be Personal
