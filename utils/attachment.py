@@ -9,3 +9,7 @@ def get_image(image_url: str):
 def image_to_data_url(image_bytes: bytes, mime_type="image/jpeg"):
     encoded = base64.b64encode(image_bytes).decode("utf-8")
     return f"data:{mime_type};base64,{encoded}"
+
+def get_audio(audio_url: str):
+    audio_bytes = fetch(audio_url)
+    return audio_bytes

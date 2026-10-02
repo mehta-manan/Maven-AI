@@ -80,9 +80,7 @@ def verify_webhook(
 @app.post("/webhook/instagram")
 def instagram_webhook(
     payload: InstagramWebhookRequestPayload
-):
-    print(payload.entry[0])
-    
+):    
     # return default_response
     entry = payload.entry[0]
     
@@ -113,19 +111,28 @@ def instagram_webhook(
             logger.info("Ignoring old message on %s: %s", account_name, message)
         else:
             if isinstance(message, TextMessage):
+                logger.info("Sender ID: %s says: %s", message.sender_id, message.text)
+                
                 content = message.get_agent_message()
+                
                 reply = generate_reply(message.sender_id, content)
                 logger.info("Generated reply: %s", reply) 
+                
                 maven_ai_ig.send_message(message.sender_id, reply)
             elif isinstance(message, AttachmentMessage):
                 for index, attachment in enumerate(message.attachments):
-                    if attachment["type"] == AttachmentType.IMAGE.value:
-                        content = message.get_agent_message(index)
+                    attachment_type = attachment["type"]
+                    logger.info("Viewing attachment %d of type %s from sender ID: %s", index, attachment_type, message.sender_id)
+                    
+                    content = message.get_agent_message(index, attachment_type)
+                    
+                    if content:
                         reply = generate_reply(message.sender_id, content)
-                        logger.info("Generated reply after analyzing image: %s", reply)
+                        logger.info("Generated reply after analyzing attachment: %s", reply)
+                        
                         maven_ai_ig.send_message(message.sender_id, reply)
                     else:
-                        logger.warning("Unsupported attachment type received on %s: %s", account_name, attachment["type"])
+                      logger.warning("Unsupported attachment type received on %s: %s", account_name, attachment["type"])  
             else:
                 logger.warning("Unsupported message type received on %s: %s", account_name, message)
 
